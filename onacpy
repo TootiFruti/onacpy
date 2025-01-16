@@ -1,0 +1,243 @@
+#!/usr/bin/env python
+
+import requests
+import json
+import subprocess
+import os
+
+DB_LOC = f"{os.path.expanduser("~")}/.config/onacpy/db.json"
+USER_DATA_LOC = f"{os.path.expanduser("~")}/.config/onacpy/userdata.json"
+
+DB = None
+USER_DATA = None
+
+current_ep = [-1, -1]
+
+def init_db():
+    global DB, USER_DATA
+    if (input(f"{os.path.expanduser("~")}/.config/onacpy/: Will be used. Are you ok?[y/n]: ").strip().lower() != 'y'):
+        print("QUITING")
+        exit()
+
+    os.makedirs(f"{os.path.expanduser("~")}/.config/onacpy", exist_ok=True)
+    res = requests.get("https://onepace.pages.dev/dub/")
+    main_page = res.text.split("\n")
+    
+    i = 0
+    data = {}
+    while i < len(main_page):
+        if main_page[i].startswith('<h3 id="arc-'):
+            arc_name = main_page[i].split(">")[1].split("<")[0]
+            while True:
+                i += 1
+                if main_page[i].startswith('<td><a href="https://pixeldrain.com/u'):
+                    break
+            eps = []
+            while True:
+                if main_page[i].startswith('<td><a href="https://pixeldrain.com/u'):
+                    link = main_page[i].split('"')[1].replace("u/", "api/file/")
+                    eps.append(link)
+                elif main_page[i].startswith('</table>'):
+                    break
+                i+=1
+            data[arc_name] = eps
+        i+=1
+
+    with open(DB_LOC, "w") as f:
+        json.dump(data, f, indent=4)
+    print(f"{DB_LOC}: Generated Successfully")
+
+    user_data_template = {
+        "default_action": "", 
+        "last_ep": [-1, -1],
+        "mpv_args": "",
+    }
+    with open(USER_DATA_LOC, "w") as f:
+        json.dump(user_data_template, f, indent=4)
+    print(f"{USER_DATA_LOC}: Generated Successfully")
+
+    DB = data
+    USER_DATA = user_data_template
+
+def update_user_data(data_type):
+    global USER_DATA, current_ep
+    if data_type is not None:
+        match data_type:
+            case "ep_num":
+                USER_DATA["last_ep"] = current_ep
+
+    with open(USER_DATA_LOC, "w") as f:
+        json.dump(USER_DATA, f, indent=4)
+
+def list_eps():
+    global DB
+    if DB is None:
+        print("Invaild cmd. No Database found.")
+        return
+
+    k = 1
+    for i, j in DB.items():
+        print(f"{k}: {i}")
+        for l in range(len(j)):
+            print(f"Ep {l+1}", end=", ")
+        print("\n")
+        k+=1
+
+def print_help():
+    help = {
+        "init" : "init the database and user_data file",
+        "list" : "List the epsiodes",
+        "w <episode number>" : "watch the episode with the number with this format X Y. Where X is the Arc number and Y is the epsiode number.\nEg: w 1 12If nothing specificed, last played episode will be played",
+        "n": "watch the next episode",
+        "l": "watch the last episode",
+        "ep": "print the current episode number."
+    }
+    for i, j in help.items():
+        print(f"{i}:\t{j}")
+
+def make_cmd(link):
+    global USER
+    cmd = "mpv "
+    cmd+= f" {USER_DATA["mpv_args"]} "
+    cmd+= link
+    return cmd
+
+
+def watch_ep(data):
+    try:
+        arc_num = int(data[0]) -1
+        ep_num = int(data[1]) -1
+    except:
+        print(f"Something went wrong while parsing: {data}.\nUse the format: X Y where X is the Arc number and Y is the episode number. Eg: 10 2: 10th arc and 2nd episode")
+        return
+
+    try:
+        t = list( list(DB.items())[arc_num][1] )[ep_num]
+    except IndexError:
+        print(f"{text}: Invaild.")
+        return
+
+    current_ep[0] = arc_num
+    current_ep[1] = ep_num
+    update_user_data("ep_num")
+    print("Launching mpv... Let it cook aight?")
+    subprocess.run(make_cmd(t), shell=True)
+    
+def last_ep():
+    global current_ep
+    arc_num = current_ep[0]
+    if arc_num == -1:
+        print("Invaild action. No previous epsiode number was found")
+        return
+    ep_num = current_ep[1]
+
+    while True:
+        try:
+            t = list( list(DB.items())[arc_num][1] )[ep_num]
+            break
+        except IndexError:
+            arc_num+=1
+            ep_num=0
+
+    current_ep[0] = arc_num
+    current_ep[1] = ep_num
+    update_user_data("ep_num")
+    print("Launching mpv... Let it cook aight?")
+    subprocess.run(make_cmd(t), shell=True)
+
+
+def watch_next():
+    global current_ep
+    arc_num = current_ep[0]
+    if arc_num == -1:
+        print("Invaild action. No previous epsiode number was found")
+        return
+    ep_num = current_ep[1]+1
+
+    while True:
+        try:
+            t = list( list(DB.items())[arc_num][1] )[ep_num]
+            break
+        except IndexError:
+            arc_num+=1
+            ep_num=0
+
+    current_ep[0] = arc_num
+    current_ep[1] = ep_num
+    update_user_data("ep_num")
+    print("Launching mpv... Let it cook aight?")
+    subprocess.run(make_cmd(t), shell=True)
+
+
+def cmd_promt(cmd):
+    global USER_DATA
+    match cmd[0]:
+        case "init":
+            init_db()
+        case "list":
+            list_eps()
+        case "help" | "?":
+            print_help()
+        case "w":
+            if len(cmd) == 1:
+                print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
+                last_ep()
+            else:
+                watch_ep(cmd[1::])
+        case "n":
+            print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
+            watch_next()
+        case "q":
+            exit()
+        case "ep":
+            print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
+        case "l":
+            print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
+            last_ep()
+        case _:
+            print(f"{cmd}: Not a valid option. Use ? or help for help")
+
+def read_user_data():
+    global USER_DATA, current_ep
+    try:
+        with open(USER_DATA_LOC, "r") as f:
+            USER_DATA = json.load(f)
+        current_ep = USER_DATA["last_ep"]
+    except FileNotFoundError:
+        print(f"{USER_DATA_LOC}: Database file not found. Suggestion: run init cmd")
+    except Exception as e:
+        print(f"[ERROR] Something went wrong file reading the Database: {USER_DATA_LOC}\n{e}Suggestion: re init")
+
+
+def main():
+    global DB 
+    read_user_data()
+    try:
+        with open(DB_LOC, "r") as f:
+            DB = json.load(f)
+    except FileNotFoundError:
+        print(f"{DB_LOC}: Database file not found. Suggestion: run init cmd")
+    except Exception as e:
+        print(f"[ERROR] Something went wrong file reading the Database: {DB_LOC}\n{e}Suggestion: re init")
+
+    if DB is None:
+        print("[WARN] No database found.")
+
+    print("Use ? or help to get help. q to quit.")
+    while True:
+        try:
+            cmd = input(">>> ").strip()
+        except KeyboardInterrupt:
+            print("")
+            continue
+        except EOFError:
+            print("Quiting...")
+            exit()
+        if cmd == "":
+            continue 
+        cmd_promt(cmd.split(" "))
+
+if __name__ == "__main__":
+    main()
+
+
