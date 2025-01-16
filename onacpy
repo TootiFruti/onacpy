@@ -185,7 +185,7 @@ def cmd_promt(cmd):
             else:
                 watch_ep(cmd[1::])
         case "n":
-            print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
+            print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+2}")
             watch_next()
         case "q":
             exit()
