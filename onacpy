@@ -141,6 +141,7 @@ def last_ep():
 
     current_ep[0] = arc_num
     current_ep[1] = ep_num
+    print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
     update_user_data("ep_num")
     print("Launching mpv... Let it cook aight?")
     subprocess.run(make_cmd(t), shell=True)
@@ -165,6 +166,7 @@ def watch_next():
     current_ep[0] = arc_num
     current_ep[1] = ep_num
     update_user_data("ep_num")
+    print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
     print("Launching mpv... Let it cook aight?")
     subprocess.run(make_cmd(t), shell=True)
 
@@ -185,14 +187,12 @@ def cmd_promt(cmd):
             else:
                 watch_ep(cmd[1::])
         case "n":
-            print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+2}")
             watch_next()
         case "q":
             exit()
         case "ep":
             print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
         case "l":
-            print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
             last_ep()
         case _:
             print(f"{cmd}: Not a valid option. Use ? or help for help")
