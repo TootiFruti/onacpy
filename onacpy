@@ -13,14 +13,20 @@ USER_DATA = None
 
 current_ep = [-1, -1]
 
+
+
 def init_db():
+
     global DB, USER_DATA
     if (input(f"{os.path.expanduser("~")}/.config/onacpy/: Will be used. Are you ok?[y/n]: ").strip().lower() != 'y'):
         print("QUITING")
         exit()
 
     os.makedirs(f"{os.path.expanduser("~")}/.config/onacpy", exist_ok=True)
-    res = requests.get("https://onepace.pages.dev/dub/")
+    if (Sub is True):
+        res = requests.get("https://onepace.pages.dev/")
+    else: 
+        res = requests.get("https://onepace.pages.dev/dub/")
     main_page = res.text.split("\n")
     
     i = 0
@@ -66,8 +72,21 @@ def update_user_data(data_type):
             case "ep_num":
                 USER_DATA["last_ep"] = current_ep
 
+
     with open(USER_DATA_LOC, "w") as f:
         json.dump(USER_DATA, f, indent=4)
+
+
+Sub = False
+def sub():
+    global Sub
+    Sub = True
+    init_db()
+
+def dub():
+    global Sub
+    Sub = False
+    init_db()
 
 def list_eps():
     global DB
@@ -90,10 +109,13 @@ def print_help():
         "w <episode number>" : "watch the episode with the number with this format X Y. Where X is the Arc number and Y is the epsiode number.\nEg: w 1 12If nothing specificed, last played episode will be played",
         "n": "watch the next episode",
         "l": "watch the last episode",
-        "ep": "print the current episode number."
+        "ep": "print the current episode number.",
+        "sub": "Switch to sub version",
+        "dub": "Switch to sub version"
     }
     for i, j in help.items():
         print(f"{i}:\t{j}")
+
 
 def make_cmd(link):
     global USER
@@ -176,6 +198,10 @@ def cmd_promt(cmd):
     match cmd[0]:
         case "init":
             init_db()
+        case "sub":
+            sub()
+        case "dub":
+            dub()
         case "list":
             list_eps()
         case "help" | "?":
