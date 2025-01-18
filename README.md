@@ -1,3 +1,4 @@
+![image](https://github.com/user-attachments/assets/be6092ab-87e5-40b0-988a-0676c7ce6029)
 # onacpy
 the BEST way to watch one pace
 
@@ -8,10 +9,18 @@ the BEST way to watch one pace
 https://github.com/user-attachments/assets/59d4b84c-295c-4f0f-88d4-1ddbf0ab6da3
 
 
+![image](https://github.com/user-attachments/assets/532bc0f8-dc3e-421d-9836-2d9ab980119a)
 
-![image](https://github.com/user-attachments/assets/63b88319-a561-4b23-982b-a1aab42f8329)
-
+### How to use
+`` 1) git clone https://github.com/TootiFruti/onacpy
+   2) cd onacpy
+   3) python onacpy
+   or 
+   chmod +x onacpy
+   then use ./onacpy to run everytime
+   ``
 
 # NOTE
 you can MANUALLY put some custom args for mpv in the userdata.json file. Like this:
 ![image](https://github.com/user-attachments/assets/46b4b4a0-071a-412c-b9b3-3f63db3411dd)
+
