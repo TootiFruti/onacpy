@@ -136,7 +136,7 @@ def watch_ep(data):
     try:
         t = list( list(DB.items())[arc_num][1] )[ep_num]
     except IndexError:
-        print(f"{text}: Invaild.")
+        print(f"[ERROR] Arc {arc_num} - Ep.{ep_num}: Invaild. No such episode exists.")
         return
 
     current_ep[0] = arc_num
