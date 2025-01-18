@@ -111,7 +111,7 @@ def print_help():
         "l": "watch the last episode",
         "ep": "print the current episode number.",
         "sub": "Switch to sub version",
-        "dub": "Switch to sub version"
+        "dub": "Switch to dub version"
     }
     for i, j in help.items():
         print(f"{i}:\t{j}")
