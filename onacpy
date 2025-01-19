@@ -4,6 +4,7 @@ import requests
 import json
 import subprocess
 import os
+from time import sleep
 
 DB_LOC = f"{os.path.expanduser("~")}/.config/onacpy/db.json"
 USER_DATA_LOC = f"{os.path.expanduser("~")}/.config/onacpy/userdata.json"
@@ -15,8 +16,7 @@ current_ep = [-1, -1]
 
 
 
-def init_db():
-
+def init_db(Sub = False):
     global DB, USER_DATA
     if (input(f"{os.path.expanduser("~")}/.config/onacpy/: Will be used. Are you ok?[y/n]: ").strip().lower() != 'y'):
         print("QUITING")
@@ -77,17 +77,6 @@ def update_user_data(data_type):
         json.dump(USER_DATA, f, indent=4)
 
 
-Sub = False
-def sub():
-    global Sub
-    Sub = True
-    init_db()
-
-def dub():
-    global Sub
-    Sub = False
-    init_db()
-
 def list_eps():
     global DB
     if DB is None:
@@ -109,9 +98,10 @@ def print_help():
         "w <episode number>" : "watch the episode with the number with this format X Y. Where X is the Arc number and Y is the epsiode number.\nEg: w 1 12If nothing specificed, last played episode will be played",
         "n": "watch the next episode",
         "l": "watch the last episode",
-        "ep": "print the current episode number.",
+        "ep or l": "print the current episode number.",
         "sub": "Switch to sub version",
-        "dub": "Switch to dub version"
+        "dub": "Switch to dub version",
+        "wc" : "Continously watch. When a episode ends, next will be played after 5 second count down."
     }
     for i, j in help.items():
         print(f"{i}:\t{j}")
@@ -124,6 +114,12 @@ def make_cmd(link):
     cmd+= link
     return cmd
 
+
+def print_ep_num():
+
+    arc_num = current_ep[0]
+    ep_num = current_ep[1]
+    print(f"{list(DB.keys())[arc_num]}: Ep.[{ep_num+1}/{len(list( list(DB.items())[arc_num][1]))}]")
 
 def watch_ep(data):
     try:
@@ -142,6 +138,7 @@ def watch_ep(data):
     current_ep[0] = arc_num
     current_ep[1] = ep_num
     update_user_data("ep_num")
+    print_ep_num()
     print("Launching mpv... Let it cook aight?")
     subprocess.run(make_cmd(t), shell=True)
     
@@ -163,7 +160,7 @@ def last_ep():
 
     current_ep[0] = arc_num
     current_ep[1] = ep_num
-    print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
+    print_ep_num()
     update_user_data("ep_num")
     print("Launching mpv... Let it cook aight?")
     subprocess.run(make_cmd(t), shell=True)
@@ -188,10 +185,22 @@ def watch_next():
     current_ep[0] = arc_num
     current_ep[1] = ep_num
     update_user_data("ep_num")
-    print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
+    print_ep_num()
     print("Launching mpv... Let it cook aight?")
     subprocess.run(make_cmd(t), shell=True)
 
+
+def watch_continously():
+    while True:
+        try:
+            for i in range(5):
+                print(f"Playing next in {i+1}. Ctrl-C to cancel.", end="\r")
+                sleep(1)
+        except(KeyboardInterrupt):
+            print("\n")
+            return
+        print("\n")
+        watch_next()
 
 def cmd_promt(cmd):
     global USER_DATA
@@ -199,7 +208,7 @@ def cmd_promt(cmd):
         case "init":
             init_db()
         case "sub":
-            sub()
+            init_db(Sub=True)
         case "dub":
             dub()
         case "list":
@@ -208,7 +217,6 @@ def cmd_promt(cmd):
             print_help()
         case "w":
             if len(cmd) == 1:
-                print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
                 last_ep()
             else:
                 watch_ep(cmd[1::])
@@ -216,10 +224,12 @@ def cmd_promt(cmd):
             watch_next()
         case "q":
             exit()
-        case "ep":
-            print(f"Arc Number: {current_ep[0]+1}\nEpisode Number: {current_ep[1]+1}")
+        case "ep" | "l":
+            print_ep_num()
         case "l":
             last_ep()
+        case "wc":
+            watch_continously()
         case _:
             print(f"{cmd}: Not a valid option. Use ? or help for help")
 
@@ -265,5 +275,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
