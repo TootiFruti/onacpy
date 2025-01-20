@@ -210,7 +210,8 @@ def cmd_promt(cmd):
         case "sub":
             init_db(Sub=True)
         case "dub":
-            dub()
+            init_db()
+            
         case "list":
             list_eps()
         case "help" | "?":
